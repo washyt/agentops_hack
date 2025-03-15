@@ -18,27 +18,40 @@ agentops.init(os.getenv("AGENTOPS_API_KEY"))
 class ChatApp:
     def __init__(self, root):
         self.root = root
-        self.root.title("🩺  Form Assistant")
-        self.root.configure(bg="#808080")
+        self.root.title("🩺 Form Assistant")
+        self.root.configure(bg="#1e1e2f")
 
-        self.main_frame = tk.Frame(root, bg="#808080")
+        self.main_frame = tk.Frame(root, bg="#1e1e2f")
         self.main_frame.pack(padx=30, pady=30)
 
-        self.chat_log = scrolledtext.ScrolledText(
-            self.main_frame, wrap=tk.WORD, width=80, height=25, state="disabled", bg="#ffffff", fg="#222", font=("Helvetica", 12), relief=tk.FLAT, borderwidth=10
-        )
-        self.chat_log.grid(row=0, column=0, columnspan=2, pady=(0, 15))
+        self.title_label = tk.Label(self.main_frame, text="Form Assistant", font=("Helvetica", 20, "bold"), fg="#00ffe0", bg="#1e1e2f")
+        self.title_label.grid(row=0, column=0, columnspan=2, pady=(0, 15))
 
-        self.input_box = tk.Entry(self.main_frame, width=70, font=("Helvetica", 12))
-        self.input_box.grid(row=1, column=0, sticky="we", padx=(0, 10))
+        self.chat_log = scrolledtext.ScrolledText(
+            self.main_frame, wrap=tk.WORD, width=80, height=25, state="disabled",
+            bg="#282c34", fg="#dcdcdc", font=("Courier New", 12), relief=tk.FLAT, borderwidth=10
+        )
+        self.chat_log.grid(row=1, column=0, columnspan=2, pady=(0, 15))
+
+        self.input_box = tk.Entry(self.main_frame, width=70, font=("Courier New", 12), bg="#20232a", fg="#dcdcdc",
+                                   insertbackground="#00ffe0", relief=tk.FLAT)
+        self.input_box.grid(row=2, column=0, sticky="we", padx=(0, 10))
         self.input_box.bind("<Return>", self.send_message)
 
-        self.send_button = tk.Button(self.main_frame, text="Send", width=10, bg="#005bb5", fg="white", font=("Helvetica", 11, "bold"), command=self.send_message)
-        self.send_button.grid(row=1, column=1, sticky="e")
+        self.send_button = tk.Button(
+            self.main_frame, text="Send", width=10, bg="#00ffe0", fg="#1e1e2f",
+            font=("Helvetica", 11, "bold"), activebackground="#00d6c5",
+            command=self.send_message, relief=tk.FLAT
+        )
+        self.send_button.grid(row=2, column=1, sticky="e")
 
         self.progress_bar = ttk.Progressbar(self.main_frame, mode="indeterminate")
-        self.progress_bar.grid(row=2, column=0, columnspan=2, pady=(10, 0), sticky="we")
+        self.progress_bar.grid(row=3, column=0, columnspan=2, pady=(10, 0), sticky="we")
         self.progress_bar.grid_remove()
+
+        style = ttk.Style()
+        style.theme_use("default")
+        style.configure("TProgressbar", thickness=5, troughcolor="#1e1e2f", background="#00ffe0", bordercolor="#1e1e2f")
 
         self.assistant_id = None
         self.thread_id = None
@@ -52,13 +65,13 @@ class ChatApp:
         try:
             self.append_chat("🛠 Creating assistant...")
             self.assistant_id = create_assistant(instructions=(
-            "You are a helpful form-filling assistant. A user will upload a form. Do your best to interpret the form regardless of type.\n"
-            "Immediately greet the user and begin by asking the user questions based on what is required to fill the form.\n"
-            "Avoid listing all the required fields up front. Instead, ask one question at a time immediately after the form has been uploaded.\n"
-            "Ask the least amount of questions needed to gather all information needed to fill out the form.\n"
-            "Once you have all information, output a JSON with each question as an object and the extrapolated answer as a key in the proper format, the first object and value should be filled_form and true."
+                "You are a helpful form-filling assistant. A user will upload a form. Do your best to interpret the form regardless of type.\n"
+                "Immediately greet the user and begin by asking the user questions based on what is required to fill the form.\n"
+                "Avoid listing all the required fields up front. Instead, ask one question at a time immediately after the form has been uploaded.\n"
+                "Ask the least amount of questions needed to gather all information needed to fill out the form.\n"
+                "Once you have all information, output a JSON with each question as an object and the extrapolated answer as a key in the proper format, the first object and value should be filled_form and true."
             ))
-            self.append_chat("Assistant ready. Please select a form.")
+            self.append_chat("✅ Assistant ready. Please select a form.")
             self.start_upload()
         except Exception as e:
             self.append_chat(f"❌ Failed to create assistant: {e}")
@@ -74,7 +87,7 @@ class ChatApp:
             self.root.quit()
             return
 
-        self.append_chat("Uploading form...")
+        self.append_chat("📤 Uploading form...")
         self.show_loading()
         threading.Thread(target=self.initialize_assistant, args=(filepath,)).start()
 
@@ -96,7 +109,7 @@ class ChatApp:
             file_id = upload_file(filepath)
             self.append_chat("✅ File uploaded. Starting thread...")
             self.thread_id = create_thread_with_file(file_id)
-            self.append_chat("Thread created. Asking first question...")
+            self.append_chat("🧵 Thread created. Asking first question...")
             wait_for_run(self.thread_id, self.assistant_id)
             self.get_response()
         except Exception as e:
